@@ -18,8 +18,10 @@ The services run in Docker — you don't need anything installed on your host to
 uv sync                  # creates .venv/ with the union of all service deps + dev tools
 .venv/bin/ruff check .   # lint
 .venv/bin/mypy services  # type-check
-.venv/bin/pytest         # run tests (none yet)
+.venv/bin/pytest         # run integration tests against the running stack
 ```
+
+The pytest suite in [tests/](tests/) is **integration**, not unit — it talks to the live gateway at `http://localhost:8080`. Bring the stack up first with `make up`, then `make test`. The most important test is [tests/test_isolation.py](tests/test_isolation.py), which verifies the cross-tenant 404 invariant (the spec calls it "the one test that catches almost every tenant-leak bug").
 
 Point your editor at `.venv/bin/python` as the project interpreter. `uv.lock` is committed so everyone gets identical versions; per-service `requirements.txt` files remain the source of truth for the Docker images.
 
