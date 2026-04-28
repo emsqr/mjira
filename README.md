@@ -119,3 +119,14 @@ Tenant context comes ONLY from the JWT (`tenant_id` claim). No service ever acce
 docker compose down            # stop, keep DB volume
 docker compose down -v         # stop and wipe data
 ```
+
+## Migrations (Alembic)
+
+Each service owns its own Alembic environment under `services/<svc>/alembic/`. Migrations apply automatically on container start (the entrypoint runs `alembic upgrade head` before uvicorn). To create a new migration after editing a model:
+
+```bash
+make revision-issues m="add issue priority"
+make migrate-issues
+```
+
+`make revision-<svc>` runs autogenerate inside the running container; review the generated file in `services/<svc>/alembic/versions/` before committing. See [.docs/alembic.md](.docs/alembic.md) for the primer.

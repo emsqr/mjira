@@ -7,7 +7,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY shared /app/shared
 COPY services/projects/app /app/app
+COPY services/projects/alembic /app/alembic
+COPY services/projects/alembic.ini /app/alembic.ini
+COPY services/projects/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 ENV PYTHONPATH=/app
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["./entrypoint.sh"]

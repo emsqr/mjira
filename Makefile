@@ -51,6 +51,24 @@ logs-%: ## Tail one service's logs (e.g. make logs-auth)
 shell-db: ## Open a psql shell on the running db container
 	docker compose exec db psql -U $$(grep ^POSTGRES_USER .env | cut -d= -f2)
 
+# ---------- Alembic migrations (per service) ----------
+
+.PHONY: migrate-%
+migrate-%: ## Apply migrations to one service (e.g. make migrate-auth)
+	docker compose exec $* alembic upgrade head
+
+.PHONY: revision-%
+revision-%: ## Autogen a revision for one service (e.g. make revision-auth m="add comments")
+	@if [ -z "$(m)" ]; then echo 'ERROR: pass a message, e.g. make revision-auth m="add comments"'; exit 1; fi
+	docker compose exec $* alembic revision --autogenerate -m "$(m)"
+	@echo
+	@echo 'Generated file is owned by root inside the container; chown it on the host:'
+	@echo '  sudo chown -R $$USER services/$*/alembic/versions'
+
+.PHONY: migration-history-%
+migration-history-%: ## Show migration history for one service (e.g. make migration-history-auth)
+	docker compose exec $* alembic history --verbose
+
 # ---------- Local dev environment (uv / .venv) ----------
 
 .PHONY: sync

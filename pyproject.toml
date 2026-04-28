@@ -11,6 +11,7 @@ dependencies = [
     "fastapi==0.115.0",
     "uvicorn[standard]==0.30.6",
     "sqlalchemy==2.0.35",
+    "alembic==1.13.3",
     "psycopg[binary]==3.2.3",
     "pydantic==2.9.2",
     "pydantic-settings==2.5.2",
@@ -34,6 +35,7 @@ package = false
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+extend-exclude = ["services/*/alembic"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
@@ -45,3 +47,4 @@ testpaths = ["tests"]
 python_version = "3.12"
 strict = false
 ignore_missing_imports = true
+exclude = ["services/.*/alembic/"]
