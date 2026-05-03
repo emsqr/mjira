@@ -15,6 +15,8 @@ from __future__ import annotations
 import json
 import logging
 import os
+import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 import pika
@@ -26,7 +28,17 @@ log = logging.getLogger(__name__)
 
 def publish_event(routing_key: str, payload: dict[str, Any]) -> None:
     """Publish one event. Failures are logged, not raised — a notification
-    miss must never break the user-facing write that produced it."""
+    miss must never break the user-facing write that produced it.
+
+    The publisher injects `event_id` (uuid) and `occurred_at` (iso8601 utc)
+    into the payload so consumers can dedupe under at-least-once delivery
+    without each call site remembering to add them.
+    """
+    payload = {
+        "event_id": str(uuid.uuid4()),
+        "occurred_at": datetime.now(UTC).isoformat(),
+        **payload,
+    }
     body = json.dumps(payload, default=str).encode()
     try:
         params = pika.URLParameters(os.environ["RABBITMQ_URL"])
@@ -43,6 +55,7 @@ def publish_event(routing_key: str, payload: dict[str, Any]) -> None:
                 properties=pika.BasicProperties(
                     content_type="application/json",
                     delivery_mode=2,  # persistent
+                    message_id=payload["event_id"],
                 ),
             )
     except Exception:

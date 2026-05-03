@@ -94,10 +94,26 @@ def update_issue(
     )
     if issue is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Issue not found")
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    changed = payload.model_dump(exclude_unset=True)
+    for field, value in changed.items():
         setattr(issue, field, value)
     db.commit()
     db.refresh(issue)
+    publish_event(
+        "issue.updated",
+        {
+            "event": "issue.updated",
+            "tenant_id": str(issue.tenant_id),
+            "issue": {
+                "id": str(issue.id),
+                "project_id": str(issue.project_id),
+                "title": issue.title,
+                "status": issue.status,
+            },
+            "changed_fields": sorted(changed.keys()),
+            "actor_user_id": str(current.user_id),
+        },
+    )
     return issue
 
 
@@ -114,5 +130,19 @@ def delete_issue(
     )
     if issue is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Issue not found")
+    snapshot = {
+        "id": str(issue.id),
+        "project_id": str(issue.project_id),
+        "tenant_id": str(issue.tenant_id),
+    }
     db.delete(issue)
     db.commit()
+    publish_event(
+        "issue.deleted",
+        {
+            "event": "issue.deleted",
+            "tenant_id": snapshot["tenant_id"],
+            "issue": snapshot,
+            "actor_user_id": str(current.user_id),
+        },
+    )

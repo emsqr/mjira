@@ -7,7 +7,7 @@ MYPY    := .venv/bin/mypy
 PYTEST  := .venv/bin/pytest
 
 GATEWAY ?= http://localhost:8080
-SERVICES := auth tenants projects issues notifications
+SERVICES := auth tenants projects issues notifications audit
 
 .PHONY: help
 help: ## Show this help

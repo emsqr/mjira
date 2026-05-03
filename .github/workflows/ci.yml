@@ -60,6 +60,7 @@ jobs:
           for i in {1..120}; do
             if curl -sf http://localhost:8080/health >/dev/null \
                && curl -sf http://localhost:8080/notifications/health >/dev/null \
+               && curl -sf http://localhost:8080/audit/health >/dev/null \
                && curl -sf http://localhost:8025/api/v2/messages >/dev/null; then
               echo "stack up after ${i}s"
               exit 0

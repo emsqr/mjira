@@ -11,6 +11,7 @@ services:
       - projects
       - issues
       - notifications
+      - audit
 
   auth:
     build:
@@ -84,6 +85,20 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
+
+  audit:
+    build:
+      context: .
+      dockerfile: services/audit/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/audit_db
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+      SERVICE_PORT: 8000
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   rabbitmq:
     image: rabbitmq:3.13-management

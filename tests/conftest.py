@@ -10,9 +10,28 @@ import os
 import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
+from pathlib import Path
 
 import httpx
 import pytest
+
+
+def _load_dotenv() -> None:
+    """Load the project's .env so tests that connect to backing services
+    (e.g. Postgres on the exposed host port) get the same credentials the
+    docker stack uses. setdefault means existing env wins — useful in CI."""
+    env_file = Path(__file__).resolve().parent.parent / ".env"
+    if not env_file.exists():
+        return
+    for raw in env_file.read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+_load_dotenv()
 
 GATEWAY = os.getenv("MJIRA_GATEWAY", "http://localhost:8080")
 DEFAULT_PASSWORD = "TestPassword123!"
