@@ -47,21 +47,26 @@ jobs:
           JWT_EXPIRE_MINUTES=60
           POSTGRES_USER=postgres_user
           POSTGRES_PASSWORD=postgres_password
+          RABBITMQ_USER=guest
+          RABBITMQ_PASSWORD=guest
+          SMTP_FROM=notifications@mjira.local
           EOF
 
       - name: Build and start stack
         run: docker compose up -d --build
 
-      - name: Wait for gateway
+      - name: Wait for stack
         run: |
-          for i in {1..60}; do
-            if curl -sf http://localhost:8080/health >/dev/null; then
-              echo "gateway up after ${i}s"
+          for i in {1..120}; do
+            if curl -sf http://localhost:8080/health >/dev/null \
+               && curl -sf http://localhost:8080/notifications/health >/dev/null \
+               && curl -sf http://localhost:8025/api/v2/messages >/dev/null; then
+              echo "stack up after ${i}s"
               exit 0
             fi
             sleep 1
           done
-          echo "gateway never became reachable"
+          echo "stack never became reachable"
           docker compose ps
           docker compose logs --tail=200
           exit 1

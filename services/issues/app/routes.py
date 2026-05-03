@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from shared.events import publish_event
 from shared.jwt_utils import CurrentUser
 
 from .db import get_db
@@ -30,6 +31,21 @@ def create_issue(
     db.add(issue)
     db.commit()
     db.refresh(issue)
+    # TODO(phase 2.5): replace inline publish with transactional outbox so a
+    # process crash between commit and publish can't lose the event.
+    publish_event(
+        "issue.created",
+        {
+            "event": "issue.created",
+            "tenant_id": str(issue.tenant_id),
+            "issue": {
+                "id": str(issue.id),
+                "project_id": str(issue.project_id),
+                "title": issue.title,
+                "created_by": str(issue.created_by),
+            },
+        },
+    )
     return issue
 
 
