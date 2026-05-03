@@ -47,7 +47,7 @@ def create_tenant(
         db.flush()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status.HTTP_409_CONFLICT, "Slug already taken")
+        raise HTTPException(status.HTTP_409_CONFLICT, "Slug already taken") from None
 
     membership = Membership(tenant_id=tenant.id, user_id=current.user_id, role="owner")
     db.add(membership)
@@ -100,7 +100,7 @@ def add_member(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status.HTTP_409_CONFLICT, "User is already a member")
+        raise HTTPException(status.HTTP_409_CONFLICT, "User is already a member") from None
     db.refresh(m)
     return m
 

@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -30,7 +30,7 @@ def create_access_token(
 ) -> str:
     if not JWT_SECRET:
         raise RuntimeError("JWT_SECRET is not configured")
-    expire = datetime.now(timezone.utc) + timedelta(
+    expire = datetime.now(UTC) + timedelta(
         minutes=expires_minutes if expires_minutes is not None else JWT_EXPIRE_MINUTES
     )
     payload: dict[str, Any] = {

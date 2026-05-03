@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  static:
+    name: lint + typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Sync deps
+        run: uv sync --frozen
+
+      - name: Ruff
+        run: uv run ruff check .
+
+      - name: Mypy
+        run: uv run mypy services shared
+
+  integration:
+    name: integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Sync deps
+        run: uv sync --frozen
+
+      - name: Write .env for compose
+        run: |
+          cat > .env <<'EOF'
+          JWT_SECRET=ci-only-secret-not-used-anywhere-real
+          JWT_ALGORITHM=HS256
+          JWT_EXPIRE_MINUTES=60
+          POSTGRES_USER=postgres_user
+          POSTGRES_PASSWORD=postgres_password
+          EOF
+
+      - name: Build and start stack
+        run: docker compose up -d --build
+
+      - name: Wait for gateway
+        run: |
+          for i in {1..60}; do
+            if curl -sf http://localhost:8080/health >/dev/null; then
+              echo "gateway up after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "gateway never became reachable"
+          docker compose ps
+          docker compose logs --tail=200
+          exit 1
+
+      - name: Pytest
+        run: uv run pytest -v
+
+      - name: Dump compose logs on failure
+        if: failure()
+        run: docker compose logs --tail=500
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

@@ -33,7 +33,8 @@ def test_create_project_invalid_key_rejected(client, tenant_user, auth_header):
 
 def test_create_project_duplicate_key_per_tenant_conflicts(client, tenant_user, auth_header):
     p = {"key": "DUP", "name": "first"}
-    assert client.post("/projects", headers=auth_header(tenant_user.token), json=p).status_code == 201
+    first = client.post("/projects", headers=auth_header(tenant_user.token), json=p)
+    assert first.status_code == 201
     r = client.post("/projects", headers=auth_header(tenant_user.token), json=p)
     assert r.status_code == 409
 

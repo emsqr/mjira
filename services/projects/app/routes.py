@@ -33,7 +33,7 @@ def create_project(
         db.rollback()
         raise HTTPException(
             status.HTTP_409_CONFLICT, f"Project key '{payload.key}' already exists"
-        )
+        ) from None
     db.refresh(project)
     return project
 

@@ -26,7 +26,7 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)) -> User:
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
+        raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered") from None
     db.refresh(user)
     return user
 
@@ -51,7 +51,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
             raise HTTPException(
                 status.HTTP_503_SERVICE_UNAVAILABLE,
                 f"Tenant service unreachable: {exc}",
-            )
+            ) from exc
         if resp.status_code == 404:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Not a member of this tenant")
         if resp.status_code != 200:

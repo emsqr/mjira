@@ -39,6 +39,8 @@ extend-exclude = ["services/*/alembic"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+# B008: Depends() in argument defaults is the standard FastAPI pattern.
+ignore = ["B008"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -47,4 +49,7 @@ testpaths = ["tests"]
 python_version = "3.12"
 strict = false
 ignore_missing_imports = true
+# Each service has its own top-level `app/` package — explicit bases prevents
+# mypy from treating them as duplicates of one global `app` module.
+explicit_package_bases = true
 exclude = ["services/.*/alembic/"]
