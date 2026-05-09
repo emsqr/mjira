@@ -2,11 +2,13 @@ import os
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
+
+from shared.cache import is_jti_blocked
 
 JWT_SECRET = os.getenv("JWT_SECRET", "")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
@@ -20,6 +22,8 @@ class CurrentUser:
     user_id: UUID
     tenant_id: UUID | None
     role: str | None
+    jti: str | None = None
+    exp: int | None = None
 
 
 def create_access_token(
@@ -36,6 +40,7 @@ def create_access_token(
     payload: dict[str, Any] = {
         "sub": str(user_id),
         "exp": expire,
+        "jti": uuid4().hex,
     }
     if tenant_id is not None:
         payload["tenant_id"] = str(tenant_id)
@@ -73,6 +78,13 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token missing subject",
         )
+    jti = payload.get("jti")
+    if jti and is_jti_blocked(jti):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token revoked",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     try:
         user_id = UUID(sub)
         tid = payload.get("tenant_id")
@@ -82,7 +94,13 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token contains invalid UUIDs",
         ) from exc
-    return CurrentUser(user_id=user_id, tenant_id=tenant_id, role=payload.get("role"))
+    return CurrentUser(
+        user_id=user_id,
+        tenant_id=tenant_id,
+        role=payload.get("role"),
+        jti=jti,
+        exp=payload.get("exp"),
+    )
 
 
 def require_role(*allowed: str):

@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+from shared.cache import RateLimitMiddleware
+
 from .routes import router
 
 app = FastAPI(
@@ -8,6 +10,7 @@ app = FastAPI(
     redoc_url="/auth/redoc",
     openapi_url="/auth/openapi.json",
 )
+app.add_middleware(RateLimitMiddleware)
 
 
 @app.get("/auth/health")

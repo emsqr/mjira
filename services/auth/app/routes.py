@@ -1,4 +1,5 @@
 import os
+import time
 from uuid import UUID
 
 import httpx
@@ -6,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from shared.cache import blocklist_jti
 from shared.jwt_utils import CurrentUser, create_access_token, get_current_user
 
 from .db import get_db
@@ -73,3 +75,14 @@ def me(
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
     return user
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(current: CurrentUser = Depends(get_current_user)) -> None:
+    """Revoke the current token by adding its jti to the Redis blocklist
+    with TTL = remaining lifetime, so the entry expires when the JWT would
+    have anyway."""
+    if current.jti and current.exp:
+        ttl = int(current.exp - time.time())
+        if ttl > 0:
+            blocklist_jti(current.jti, ttl)
