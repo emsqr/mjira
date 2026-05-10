@@ -50,6 +50,7 @@ jobs:
           RABBITMQ_USER=guest
           RABBITMQ_PASSWORD=guest
           SMTP_FROM=notifications@mjira.local
+          RATE_LIMIT_PER_MINUTE=600
           EOF
 
       - name: Build and start stack
