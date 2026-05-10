@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 
 from shared.cache import RateLimitMiddleware
+from shared.observability import instrument_fastapi_app, setup_tracing
 
 from .routes import router
+
+setup_tracing("auth-service")
 
 app = FastAPI(
     title="auth-service",
@@ -10,6 +13,7 @@ app = FastAPI(
     redoc_url="/auth/redoc",
     openapi_url="/auth/openapi.json",
 )
+instrument_fastapi_app(app)
 app.add_middleware(RateLimitMiddleware)
 
 

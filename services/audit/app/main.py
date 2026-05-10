@@ -2,7 +2,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from shared.observability import instrument_fastapi_app, setup_tracing
+
 from .consumer import start_in_background
+
+setup_tracing("audit-service")
 
 
 @asynccontextmanager
@@ -18,6 +22,7 @@ app = FastAPI(
     openapi_url="/audit/openapi.json",
     lifespan=lifespan,
 )
+instrument_fastapi_app(app)
 
 
 @app.get("/audit/health")
