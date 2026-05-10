@@ -58,7 +58,7 @@ def setup_tracing(service_name: str) -> None:
     log.info("tracing enabled for service=%s exporter=%s", service_name, endpoint)
 
 
-def instrument_fastapi_app(app: "FastAPI") -> None:
+def instrument_fastapi_app(app: FastAPI) -> None:
     """Per-app FastAPI instrumentation. Call after `app = FastAPI(...)`."""
     try:
         from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
